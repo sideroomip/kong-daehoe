@@ -387,6 +387,7 @@ function separate(k = 0.5) {
 function land(b) {
   const z = zoneAt(b.x, b.y);
   b.zone = z;
+  if (phase === 'end') return;   // 시간 끝난 뒤 떨어진 콩은 점수에 안 넣음
   if (z === 1 && !b.done) {
     b.done = true;
     score += b.pts; counts[b.t]++; totalMoved++;
@@ -752,12 +753,12 @@ async function makeCert(name) {
   g.fillStyle = ink; g.font = '50px Jua, sans-serif'; g.textAlign = 'right';
   g.fillText(`성명  ${name}`, 950, 540);
   // 본문
-  g.textAlign = 'left'; g.font = '46px "Gowun Dodum", sans-serif';
+  g.textAlign = 'left'; g.font = '44px "Gowun Dodum", sans-serif';
   const where = roundsCleared === 0 ? '예선에서' : roundsCleared >= STAGES.length ? '왕중왕전까지 모두 통과하며' : `${STAGES[roundsCleared][0]}까지 올라`;
   const body = `위 사람은 전국 젓가락 콩 옮기기 대회 ${where} 젓가락으로 콩 ${totalMoved}알을 옮겨 ${score}점을 기록하였으므로 '${lastRank[1]}'의 명예를 드리고 이 상장을 수여합니다.`;
-  const endY = wrapText(g, body, 140, 650, 800, 82);
-  // 콩 기록
-  const rowY = Math.max(endY + 120, 990);
+  const endY = wrapText(g, body, 140, 640, 800, 76);
+  // 콩 기록 (아래쪽 날짜·대회장은 테두리 안 고정 위치)
+  const rowY = Math.min(Math.max(endY + 95, 960), 1010);
   const items = [['soy', counts.soy], ['black', counts.black], ['kidney', counts.kidney]];
   items.forEach(([t, n], i) => {
     const x = 250 + i * 290;
@@ -770,18 +771,15 @@ async function makeCert(name) {
   // 날짜 · 수여
   const d = new Date();
   g.textAlign = 'center'; g.font = '40px "Gowun Dodum", sans-serif'; g.fillStyle = ink;
-  g.fillText(`${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일`, 540, rowY + 120);
+  g.fillText(`${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일`, 540, 1110);
   g.font = '46px Jua, sans-serif';
-  g.fillText('전국 젓가락 콩 옮기기 대회장', 500, rowY + 200);
+  g.fillText('전국 젓가락 콩 옮기기 대회장', 500, 1195);
   // 도장
-  g.save(); g.translate(860, rowY + 186); g.rotate(-0.12); g.globalAlpha = 0.82;
+  g.save(); g.translate(862, 1180); g.rotate(-0.12); g.globalAlpha = 0.82;
   g.strokeStyle = red; g.lineWidth = 7; g.strokeRect(-52, -52, 104, 104);
   g.fillStyle = red; g.font = '44px Jua, sans-serif'; g.textAlign = 'center';
   g.fillText('콩대', 0, -6); g.fillText('회장', 0, 40);
   g.restore();
-  // 링크
-  g.fillStyle = 'rgba(43,38,34,.55)'; g.font = '26px "Gowun Dodum", sans-serif';
-  g.fillText(`나도 도전하기 · ${GAME_URL.replace(/^https?:\/\//, '')}`, 540, 1245);
   return c;
 }
 let certCanvas = null;
