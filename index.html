@@ -418,11 +418,13 @@ function tryGrab() {
     if (d < bestD) { bestD = d; bestB = b; }
   });
   if (!bestB) { sfx.clack(); return; }
-  const b = bestB, grabR = (b.r * 0.55 + 3) * b.grab;
+  const touch = pointerType === 'touch';
+  // 손가락은 마우스보다 조준이 어려워서 집히는 범위를 넓혀 줌
+  const b = bestB, grabR = (b.r * 0.55 + 3) * b.grab * (touch ? 1.9 : 1);
   if (bestD < grabR) {
     held = b; b.z = 0.2; b.vz = 0; b.vx = b.vy = 0; wobble = 0;
     sfx.grab();
-  } else if (bestD < b.r + 9) {
+  } else if (bestD < (touch ? grabR + 4 : b.r + 9)) {
     const nx = (b.x - tip.x) / (bestD || 1), ny = (b.y - tip.y) / (bestD || 1);
     const power = 120 + Math.random() * 120;
     b.vx = nx * power; b.vy = ny * power; b.vz = 1.6 + Math.random();
@@ -434,7 +436,7 @@ function tryGrab() {
 // ---------- 입력 ----------
 function toLocal(e) {
   const r = cv.getBoundingClientRect();
-  const off = pointerType === 'touch' ? -52 : 0;
+  const off = pointerType === 'touch' ? -44 : 0;
   return {
     x: Math.max(4, Math.min(W - 4, (e.clientX - r.left) / r.width * W)),
     y: Math.max(4, Math.min(H - 4, (e.clientY - r.top) / r.height * H + off)),
@@ -469,7 +471,8 @@ function update(dt) {
   if (pointerDown && !closedOnce && closeT > 0.8) { closedOnce = true; if (phase === 'play') tryGrab(); }
   if (dt > 0) {
     const fvx = (tip.x - prevTip.x) / dt, fvy = (tip.y - prevTip.y) / dt;
-    tip.vx = tip.vx * 0.7 + fvx * 0.3; tip.vy = tip.vy * 0.7 + fvy * 0.3;
+    const k = pointerType === 'touch' ? 0.18 : 0.3; // 터치는 이벤트가 들쭉날쭉해서 더 부드럽게
+    tip.vx = tip.vx * (1 - k) + fvx * k; tip.vy = tip.vy * (1 - k) + fvy * k;
   }
   prevTip.x = tip.x; prevTip.y = tip.y;
 
@@ -488,7 +491,8 @@ function update(dt) {
 
   if (held) {
     const speed = Math.hypot(tip.vx, tip.vy);
-    wobble += Math.max(0, speed - 260) * dt * 0.0042 * held.slip;
+    const touch = pointerType === 'touch';
+    wobble += Math.max(0, speed - (touch ? 360 : 260)) * dt * (touch ? 0.003 : 0.0042) * held.slip;
     wobble = Math.max(0, wobble - 0.55 * dt);
     held.x = tip.x; held.y = tip.y; held.z += (1 - held.z) * Math.min(1, dt * 14);
     if (wobble >= 1) {
